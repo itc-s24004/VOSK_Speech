@@ -15,9 +15,13 @@ window.addEventListener("load", async () => {
     //   console.log("type=" + ev.data.type + " size=" + ev.data.size);
     //   micTestChunks.push(ev.data);
     //   console.log( await ev.data.arrayBuffer())
+        const buff = await ev.data.arrayBuffer();
+        ipc_client.send("audio-data", buff);
     };
     micTestRecorder.start(100);
     console.log(micTestRecorder.audioBitsPerSecond)
     console.log('start mic test');
+
+
     
 })
