@@ -1,0 +1,35 @@
+.frame {
+    width: calc(100vw - 100px);
+    height: 100vh;
+    margin: auto;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+.controll {
+    height: 100px;
+}
+
+.controll_start {
+    display: inline-block;
+    width: 300px;
+    background-color: rgb(206, 206, 206);
+    text-align: center;
+    font-size: 2.5em;
+    padding: 5px;
+}
+
+
+
+.text_result {
+    flex: 1 ;
+
+    width: 100%;
+    
+    margin: auto;
+    margin-bottom: 30px;
+
+    background-color: gray;
+}

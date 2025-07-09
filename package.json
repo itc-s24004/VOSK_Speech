@@ -9,7 +9,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^5.1.0",
     "vosk": "^0.3.39"
   }
 }
