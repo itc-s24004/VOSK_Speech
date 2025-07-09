@@ -16,6 +16,7 @@ window.addEventListener("load", async () => {
     //   micTestChunks.push(ev.data);
     //   console.log( await ev.data.arrayBuffer())
         const buff = await ev.data.arrayBuffer();
+        console.log(buff);
         ipc_client.send("audio-data", buff);
     };
     micTestRecorder.start(100);
