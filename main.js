@@ -91,7 +91,9 @@ exports.run = async (REP) => {
 
     
     ipcMain.on("audio-data",  (ev, /**@type {ArrayBuffer} */ buff) => {
-        console.log(buff instanceof ArrayBuffer)
+        // console.log(buff instanceof ArrayBuffer)
+        console.log(buff);
+        return;
         // console.log(buff);
         try {
             vosk_.stdin.write(Buffer.from(buff));
@@ -100,9 +102,9 @@ exports.run = async (REP) => {
         }
     });
 
-    setInterval(() => {
-        vosk_.stdin.write("buff");
-    }, 1000);
+    // setInterval(() => {
+    //     vosk_.stdin.write("buff");
+    // }, 1000);
 }
 
 // console.log(path.join(__dirname, "../../system/_node_npm/node-binary/bin/node"))
