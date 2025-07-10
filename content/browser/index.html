@@ -24,12 +24,23 @@
             speech.start();
         });
 
-
         speech.addEventListener('result' , function(e) {
-            // 音声認識で取得した情報を、コンソール画面に表示
-            console.log(e);
+        // 音声認識で取得した情報を、コンソール画面に表示
+        console.log(e);
+
+            //---------------追記---------------//
+            // 音声認識で取得した情報を、HTMLに表示
+            const text = e.results[0][0].transcript;
+            content.innerText += text;
+            //--------------------------------//
+
         });
 
+        speech.onend = () => { 
+            speech.start() 
+        };
+
     </script>
+
 <body>
 <html>
