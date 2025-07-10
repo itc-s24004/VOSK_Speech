@@ -5,10 +5,18 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itc-s24004/VOSK_Speech.git"
+  },
   "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/itc-s24004/VOSK_Speech/issues"
+  },
+  "homepage": "https://github.com/itc-s24004/VOSK_Speech#readme",
   "description": "",
   "dependencies": {
-    "vosk": "^0.3.39"
+    "mic": "^2.1.2"
   }
 }

@@ -17,7 +17,7 @@ window.addEventListener("load", async () => {
     // ScriptProcessorNode が一番簡単。f32-plannerでも受け取ってくれる
     const recognizerNode = audioContext.createScriptProcessor(4096, 1, 1);
     recognizerNode.onaudioprocess = event => {
-        console.log(event.inputBuffer.getChannelData(0).buffer);
+        console.log(event.inputBuffer.sampleRate);
         ipc_client.send("audio-data", event.inputBuffer.getChannelData(0).buffer);
         // try {
         // // 認識エンジンに突っ込む
