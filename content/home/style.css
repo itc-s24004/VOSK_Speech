@@ -9,6 +9,8 @@
 .title {
     margin: 0;
 
+    font-size: 10vh;
+
     text-align: center;
 }
 
@@ -32,15 +34,16 @@
     width: 50%;
 
     padding: 5px;
-    padding-left: 20px;
+    padding-left: 60px;
 
     margin: auto;
     margin-left: 20px;
 
-    font-size: 2.5em;
+    font-size: 10vh;
     font-weight: 500;
 
     background-color: rgb(202, 202, 202);
 
+    cursor: pointer;
 
 }

@@ -23,16 +23,25 @@ exports.run = async (REP) => {
         if (type == "single") return;
 
         if (window && window.isEnabled()) {
-            window.focus()
+            window.focus();
         } else {
             window = createWindow({}, false);
-            window.loadURL("https://itc-s24004.github.io/VOSK_Speech/content/index.html");
-            // window.loadFile(path.join(__dirname, "content/home/index.html"));
+            // window.loadURL("https://itc-s24004.github.io/VOSK_Speech/content/index.html");
+            window.loadFile(path.join(__dirname, "content/home/index.html"));
             window.webContents.openDevTools();
             window.once("closed", () => {
                 window = null;
             });
         }
+    });
+
+
+    //ウィンドウ操作▼
+    const contentRoot = path.join(__dirname, "content");
+    ipcMain.on("OVSK_Speech-Open", (ev, content) => {
+        if (typeof content != "string") return;
+        const target = path.join(contentRoot, content, "index.html");
+        if (window && window.isEnabled()) window.loadFile(target);
     });
 
     const VOSK_Wrapper = await REP.getAsync("VOSK_Wrapper");
@@ -47,14 +56,11 @@ exports.run = async (REP) => {
         rate: String(sample_rate),
         channels: '1',
         debug: false,
-        device: 'default',    
+        device: 'default',
+        bitwidth: "16"
     });
 
     var micInputStream = micInstance.getAudioStream();
-
-    process.on('SIGINT', function() {
-        micInstance.stop();
-    });
 
     micInstance.start();
 
@@ -64,18 +70,27 @@ exports.run = async (REP) => {
 
     vosk.on("result", (result) => {
         console.log(result);
+        window?.webContents?.send("result", result.text);
     });
+    vosk.on("partialResult", (result) => {
+        console.log(result)
+        window?.webContents?.send("partialResult", result.partial);
+    })
 
 
 
+    //終了時にマイクを停止
     const addExitCall = REP.get("addExitCall");
     addExitCall(() => {
-        console.log("kill")
+        // console.log("kill")
         vosk.stop();
+        micInstance.stop();
     })
 
 
     
+
+
     ipcMain.on("audio-data",  (ev, /**@type {ArrayBuffer} */ buff) => {
     });
 

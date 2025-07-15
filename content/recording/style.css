@@ -32,4 +32,11 @@
     margin-bottom: 30px;
 
     background-color: gray;
+
+    overflow-y: scroll;
+}
+
+
+.partial {
+    color: blue;
 }
