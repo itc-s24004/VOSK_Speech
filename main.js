@@ -7,8 +7,11 @@ const path = require("path");
  * @param {import("../../system/ModuleRepository/main").ModuleReposiory} REP 
  */
 exports.run = async (REP) => {
+    exports.run = null;
     const createWindow = REP.get("createWindow")
     const GUI_APP_Launcher = REP.get("GUI_APP_Launcher");
+    const VOSK_Wrapper = await REP.getAsync("VOSK_Wrapper");
+    const addExitCall = REP.get("addExitCall");
 
     await GUI_APP_Launcher.whenReady();
 
@@ -44,8 +47,6 @@ exports.run = async (REP) => {
         if (window && window.isEnabled()) window.loadFile(target);
     });
 
-    const VOSK_Wrapper = await REP.getAsync("VOSK_Wrapper");
-
 
     const sample_rate = 48000;
 
@@ -65,22 +66,21 @@ exports.run = async (REP) => {
     micInstance.start();
 
     micInputStream.on('data', data => {
-        vosk.sendAudio(data);
+        vosk.inputAudio(data);
     });
 
     vosk.on("result", (result) => {
-        console.log(result);
+        // console.log(result);
         window?.webContents?.send("result", result.text);
     });
     vosk.on("partialResult", (result) => {
-        console.log(result)
+        // console.log(result)
         window?.webContents?.send("partialResult", result.partial);
     })
 
 
 
     //終了時にマイクを停止
-    const addExitCall = REP.get("addExitCall");
     addExitCall(() => {
         // console.log("kill")
         vosk.stop();
