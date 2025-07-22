@@ -1,4 +1,4 @@
-const { BrowserWindow, ipcMain } = require("electron");
+const { BrowserWindow, ipcMain, WebContentsView, BaseWindow } = require("electron");
 const mic = require("mic");
 const path = require("path");
 
@@ -8,30 +8,80 @@ const path = require("path");
  */
 exports.run = async (REP) => {
     exports.run = null;
-    const createWindow = REP.get("createWindow")
+
+    const createWebContentsView = REP.get("createWebContentsView");
+    const preload_origin = REP.get("preload_origin");
     const GUI_APP_Launcher = REP.get("GUI_APP_Launcher");
     const VOSK_Wrapper = await REP.getAsync("VOSK_Wrapper");
     const addExitCall = REP.get("addExitCall");
 
+
     await GUI_APP_Launcher.whenReady();
+
 
     const app = new GUI_APP_Launcher();
     app.name = "文字起こし";
     app.icon = `rgb(224, 101, 70) url(${path.join(__dirname, "icon.png")}) center / 70% no-repeat `;
 
 
-    /**@type {BrowserWindow} */
+    const contentWindow = createWebContentsView();
+    contentWindow.webContents.loadFile(path.join(__dirname, "content/home/index.html"))
+    contentWindow.webContents.openDevTools()
+
+    //エディタプラグイン▼
+    let canUseEditor = false;
+    const editorWindow = (async () => {
+        const SimpleTextEditor = await REP.getAsync("SimpleTextEditor");
+        const editor = new SimpleTextEditor();
+        await editor.whenReady();
+        canUseEditor = true;
+        resize()
+        if (window) {
+            window.contentView.addChildView(editor.window);
+        }
+        return editor;
+    })();
+
+
+    /**@type {BaseWindow} */
     let window;
-    app.on("click", (type) => {
+    let showEditor = false;
+    async function resize() {
+        if (!window) return;
+        const [width, height] = window.getSize();
+
+        if (showEditor && canUseEditor) {
+            contentWindow.setBounds({x: 0, y: 0, width: 0, height: 0});
+            (await editorWindow).window.setBounds({x: 0, y: 0, width, height});
+
+        } else {
+            contentWindow.setBounds({x: 0, y: 0, width, height});
+            if (canUseEditor) (await editorWindow).window.setBounds({x: 0, y: 0, width: 0, height: 0});
+
+        }
+    }
+
+
+    app.on("click", async (type) => {
         if (type == "single") return;
 
-        if (window && window.isEnabled()) {
+        if (window) {
             window.focus();
+
         } else {
-            window = createWindow({}, false);
-            // window.loadURL("https://itc-s24004.github.io/VOSK_Speech/content/index.html");
-            window.loadFile(path.join(__dirname, "content/home/index.html"));
-            window.webContents.openDevTools();
+            window = new BaseWindow();
+            window.setMenu(null);
+
+            window.contentView.addChildView(contentWindow);
+
+            //エディタ埋め込み▼
+            if (canUseEditor) window.contentView.addChildView((await editorWindow).window);
+
+            resize();
+
+
+            window.addListener("resize", resize);
+
             window.once("closed", () => {
                 window = null;
             });
@@ -44,14 +94,29 @@ exports.run = async (REP) => {
     ipcMain.on("OVSK_Speech-Open", (ev, content) => {
         if (typeof content != "string") return;
         const target = path.join(contentRoot, content, "index.html");
-        if (window && window.isEnabled()) window.loadFile(target);
+        contentWindow.webContents.loadFile(target);
     });
+
+    ipcMain.on("OVSK_Speech-Exit", (ev) => {
+        if (window) window.close();
+    });
+
+
+    ipcMain.on("VOSK_Speech-Editor", (ev, file) => {
+        
+    });
+
+
+
+
+
+
 
 
     const sample_rate = 48000;
 
 
-    const vosk = new VOSK_Wrapper(sample_rate);
+    const vosk = new VOSK_Wrapper(sample_rate, "vosk-model-small-ja-0.22");
 
     var micInstance = mic({
         rate: String(sample_rate),
@@ -71,11 +136,11 @@ exports.run = async (REP) => {
 
     vosk.on("result", (result) => {
         // console.log(result);
-        window?.webContents?.send("result", result.text);
+        contentWindow.webContents.send("result", result.text);
     });
     vosk.on("partialResult", (result) => {
         // console.log(result)
-        window?.webContents?.send("partialResult", result.partial);
+        contentWindow.webContents.send("partialResult", result.partial);
     })
 
 
