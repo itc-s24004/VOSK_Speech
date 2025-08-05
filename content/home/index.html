@@ -15,10 +15,10 @@
     <div class="frame">
         <h1 class="title">文字起こしメモ</h1>
         <div class="content_frame">
-            <div class="systemButton" onclick="window.electron.send(`OVSK_Speech-Open`, `recording`)">プレイ</div>
-            <div class="systemButton" onclick="window.electron.send(`OVSK_Speech-Open`, `memo_list`)">保存メモ</div>
-            <div class="systemButton" onclick="window.electron.send(`OVSK_Speech-Open`, `settings`)">設定</div>
-            <div class="systemButton" onclick="window.electron.send(`OVSK_Speech-Exit`)">ログアウト</div>
+            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `recording`)">プレイ</div>
+            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `memo_list`)">保存メモ</div>
+            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `settings`)">設定</div>
+            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech-Exit`)">ログアウト</div>
         </div>
     </div>
 </body>

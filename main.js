@@ -1,6 +1,10 @@
-const { BrowserWindow, ipcMain, WebContentsView, BaseWindow } = require("electron");
-const mic = require("mic");
+const { BrowserWindow, ipcMain, WebContentsView, BaseWindow, shell } = require("electron");
+const mic = require('node-microphone');
+
+
+// const IsSilence = require("mic/lib/silenceTransform");
 const path = require("path");
+const fs = require("fs");
 
 /**
  * 
@@ -9,8 +13,59 @@ const path = require("path");
 exports.run = async (REP) => {
     exports.run = null;
 
-    const createWebContentsView = REP.get("createWebContentsView");
-    const preload_origin = REP.get("preload_origin");
+    //保存先▼
+    const ContentRoot = path.join(__dirname, "content");
+    const LOCAL_CONTENT_ROOT = REP.get("LOCAL_CONTENT_ROOT");
+    const APP_ROOT = path.join(LOCAL_CONTENT_ROOT, "VOSK_Speech")
+    const LOG_ROOT = path.join(APP_ROOT, "logs");
+    if (!fs.existsSync(LOG_ROOT)) fs.mkdirSync(LOG_ROOT, {recursive: true});
+
+
+    //設定▼
+    const configPath = path.join(APP_ROOT, "config.json");
+    const JsonConfig = REP.get("JsonConfig");
+    const [config, useDefaultConfig, save_Config] = JsonConfig.load(
+        configPath,
+        {
+            "model": ""
+        }
+    );
+    if (useDefaultConfig) save_Config();
+
+
+    //検索辞書▼
+    const speechIndexPath = path.join(APP_ROOT, "speechIndex.json");
+    const [speechIndex, save_SpeechIndex] = (() => {
+        const IndexType = {
+            id: "",
+            title: "",
+            time: 0,
+            tags: []
+        };
+
+        const [index, , save] = JsonConfig.load(
+            speechIndexPath,
+            {
+                /**@type { {id: string, title: string, time: number, tags: string[]}[] } */
+                speechIndex: []
+            }
+        );
+        const SecureIndex = index.speechIndex.map(i => {
+            if (JsonConfig.typeCheck(i, IndexType)) {
+                i.tags = i.tags.filter(tag => typeof tag == "string");
+                return i;
+            }
+        }).filter(i => !!i);
+        index.speechIndex = SecureIndex;
+        save();
+
+        return [SecureIndex, save];
+    })();
+    
+
+
+    //モジュール▼
+    const createWindow = REP.get("createWindow");
     const GUI_APP_Launcher = REP.get("GUI_APP_Launcher");
     const VOSK_Wrapper = await REP.getAsync("VOSK_Wrapper");
     const addExitCall = REP.get("addExitCall");
@@ -19,48 +74,18 @@ exports.run = async (REP) => {
     await GUI_APP_Launcher.whenReady();
 
 
+    //アプリ本体▼!!!ここから!!!
     const app = new GUI_APP_Launcher();
     app.name = "文字起こし";
     app.icon = `rgb(224, 101, 70) url(${path.join(__dirname, "icon.png")}) center / 70% no-repeat `;
 
 
-    const contentWindow = createWebContentsView();
-    contentWindow.webContents.loadFile(path.join(__dirname, "content/home/index.html"))
-    contentWindow.webContents.openDevTools()
-
-    //エディタプラグイン▼
-    let canUseEditor = false;
-    const editorWindow = (async () => {
-        const SimpleTextEditor = await REP.getAsync("SimpleTextEditor");
-        const editor = new SimpleTextEditor();
-        await editor.whenReady();
-        canUseEditor = true;
-        resize()
-        if (window) {
-            window.contentView.addChildView(editor.window);
-        }
-        return editor;
-    })();
+    const homeContentPath = path.join(__dirname, "content/home/index.html")
 
 
-    /**@type {BaseWindow} */
+
+    /**@type {BrowserWindow} */
     let window;
-    let showEditor = false;
-    async function resize() {
-        if (!window) return;
-        const [width, height] = window.getSize();
-
-        if (showEditor && canUseEditor) {
-            contentWindow.setBounds({x: 0, y: 0, width: 0, height: 0});
-            (await editorWindow).window.setBounds({x: 0, y: 0, width, height});
-
-        } else {
-            contentWindow.setBounds({x: 0, y: 0, width, height});
-            if (canUseEditor) (await editorWindow).window.setBounds({x: 0, y: 0, width: 0, height: 0});
-
-        }
-    }
-
 
     app.on("click", async (type) => {
         if (type == "single") return;
@@ -69,18 +94,9 @@ exports.run = async (REP) => {
             window.focus();
 
         } else {
-            window = new BaseWindow();
-            window.setMenu(null);
-
-            window.contentView.addChildView(contentWindow);
-
-            //エディタ埋め込み▼
-            if (canUseEditor) window.contentView.addChildView((await editorWindow).window);
-
-            resize();
-
-
-            window.addListener("resize", resize);
+            window = createWindow();
+            window.webContents.openDevTools()
+            window.loadFile(homeContentPath);
 
             window.once("closed", () => {
                 window = null;
@@ -89,26 +105,136 @@ exports.run = async (REP) => {
     });
 
 
-    //ウィンドウ操作▼
-    const contentRoot = path.join(__dirname, "content");
-    ipcMain.on("OVSK_Speech-Open", (ev, content) => {
-        if (typeof content != "string") return;
-        const target = path.join(contentRoot, content, "index.html");
-        contentWindow.webContents.loadFile(target);
+    //操作リクエスト▼
+    ipcMain.handle("VOSK_Speech", async (ev, EventName, ...args) => {
+        if (!window || window.webContents != ev.sender) return;
+
+        switch (EventName) {
+            case "open": {
+                const [content] =  args;
+                const target = path.join(ContentRoot, content, "index.html");
+                window.loadFile(target);
+                break
+            }
+
+            case "save": {
+                const [content, title, tags] = args;
+
+                if (typeof content != "string") break;
+                if (typeof title != "string") break;
+                if (!Array.isArray(tags)) break;
+
+                const id = crypto.randomUUID();
+                const contentPath = path.join(LOG_ROOT, id);
+                try {
+                    fs.writeFileSync(contentPath, content);
+                } catch {break};
+                speechIndex.push({id, title, time: new Date().getTime(), tags: tags.filter(t => typeof t == "string")});
+                save_SpeechIndex();
+
+                return id;
+            }
+
+            case "getList": {
+
+                return
+            }
+
+            case "editor": {
+                const [id] = args;
+                //エディタウィンドウを準備
+                const ew = await createEditor();
+                if (!ew) return -1;
+
+
+                const data = speechIndex.find(i => i.id == id);
+                if (!data) return 0;
+
+                //記録を取得
+                const contentPath = path.join(LOG_ROOT, id);
+                const content = (() => {
+                    try {
+                        return fs.readFileSync(contentPath, {encoding: "utf-8"});
+                    } catch {
+                        return "";
+                    }
+                })();
+                if (typeof content != "string") return 0;
+
+                //エディタ準備
+                const te = ew.add();
+                if (!te) return -1;
+
+                await te.whenReady();
+                te.insert(content)
+                
+
+
+                
+
+                te.on("save", () => {
+                    const content = te.text;
+                    fs.writeFileSync(contentPath, content);
+
+                });
+
+                return true;
+            }
+
+            case "getConfig": {
+                return config;
+            }
+
+            case "setConfig": {
+                const [key, value] = args;
+                if (!(key in config)) break;
+                if (!JsonConfig.typeCheck(config[key], value)) break;
+                config[key] = value;
+                save();
+                break;
+            }
+        }
     });
 
-    ipcMain.on("OVSK_Speech-Exit", (ev) => {
-        if (window) window.close();
-    });
+
+    /**@type {import("../../system/ModuleRepository/_rep_plugin").rep_plugin["SimpleTextEditorWindow"]["prototype"]} */
+    let editor;
+    async function createEditor() {
+        if (editor) return editor;
+        if (!REP.has("SimpleTextEditorWindow")) return;
+        const SimpleTextEditorWindow = await REP.getAsync("SimpleTextEditorWindow");
+        const ew = new SimpleTextEditorWindow();
+        ew.on("close", () => {
+            editor = null;
+        });
+        await ew.whenReady();
+        ew.title = "記録を編集";
+        editor = ew;
+        return ew;
+    }
+
+    // const openResult = await shell.openPath(path.join(__dirname, "text.txt"))
+    // console.log(openResult)
+    // console.log("open path")
+    // console.log(path.join(__dirname, "text.txt"))
 
 
-    ipcMain.on("VOSK_Speech-Editor", (ev, file) => {
-        
-    });
+    // const SimpleTextEditorWindow = await REP.getAsync("SimpleTextEditorWindow");
+    // const ew = new SimpleTextEditorWindow();
+    // await ew.whenReady();
+    // ew.title = "テキストエディタ";
+    // const ste = ew.add();
+    // await ste.whenReady();
+    // ste.window.webContents.openDevTools();
 
 
+    // ste.on("save", async () => {
+    //     console.log("save----------------------");
+    //     const txt = await ste.text;
+    //     console.log(txt);
+    // });
 
-
+    
 
 
 
@@ -116,32 +242,43 @@ exports.run = async (REP) => {
     const sample_rate = 48000;
 
 
-    const vosk = new VOSK_Wrapper(sample_rate, "vosk-model-small-ja-0.22");
+    const VOSK_Models = VOSK_Wrapper.models;
 
-    var micInstance = mic({
-        rate: String(sample_rate),
-        channels: '1',
-        debug: false,
-        device: 'default',
-        bitwidth: "16"
-    });
+    const vosk = new VOSK_Wrapper(sample_rate, VOSK_Models[0]);
 
-    var micInputStream = micInstance.getAudioStream();
-
-    micInstance.start();
-
-    micInputStream.on('data', data => {
-        vosk.inputAudio(data);
-    });
 
     vosk.on("result", (result) => {
         // console.log(result);
-        contentWindow.webContents.send("result", result.text);
+        if (window) window.webContents.send("result", result.text);
     });
     vosk.on("partialResult", (result) => {
         // console.log(result)
-        contentWindow.webContents.send("partialResult", result.partial);
+        if (window) window.webContents.send("partialResult", result.partial);
     })
+
+
+    /**@type {mic} */
+    let micInstance;
+    function startMic() {
+        if (micInstance) return;
+        micInstance =  new mic({
+            rate: sample_rate,
+            bitwidth: 16,
+            channels: 1,
+            device: "default",
+            useDataEmitter: true
+        });
+        micInstance.startRecording();
+        micInstance.on("data", (data) => {
+            vosk.inputAudio(data);
+        });
+    }
+    function stopMic() {
+        if (micInstance) micInstance.stopRecording()
+        micInstance = null;
+    }
+    
+    startMic();
 
 
 
@@ -149,8 +286,8 @@ exports.run = async (REP) => {
     addExitCall(() => {
         // console.log("kill")
         vosk.stop();
-        micInstance.stop();
-    })
+        stopMic();
+    });
 
 
     

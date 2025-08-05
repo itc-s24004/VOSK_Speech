@@ -17,6 +17,7 @@
   "homepage": "https://github.com/itc-s24004/VOSK_Speech#readme",
   "description": "",
   "dependencies": {
-    "mic": "^2.1.2"
+    "mic": "^2.1.2",
+    "node-microphone": "^0.1.6"
   }
 }
