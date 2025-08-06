@@ -117,6 +117,8 @@ exports.run = async (REP) => {
                 break
             }
 
+
+
             case "save": {
                 const [content, title, tags] = args;
 
@@ -135,10 +137,26 @@ exports.run = async (REP) => {
                 return id;
             }
 
-            case "getList": {
 
-                return
+
+            case "getSpeechIndex": {
+                return speechIndex;
             }
+
+
+
+            case "setSpeechIndex": {
+                const [id, key, value] = args;
+                if (typeof key != "string" || key == "id") return -1;
+                const I = speechIndex.find(i => i.id == id);
+                if (!I) return 0;
+                if (!JsonConfig.typeCheck(I[key], value)) return -1;
+                I[key] = value;
+                save_SpeechIndex();
+                return 1;
+            }
+
+
 
             case "editor": {
                 const [id] = args;
@@ -166,33 +184,36 @@ exports.run = async (REP) => {
                 if (!te) return -1;
 
                 await te.whenReady();
-                te.insert(content)
+                te.insert(content);
                 
 
-
-                
-
-                te.on("save", () => {
-                    const content = te.text;
+                te.on("save", async () => {
+                    const content = await te.text;
                     fs.writeFileSync(contentPath, content);
-
                 });
 
                 return true;
             }
 
+
+
             case "getConfig": {
                 return config;
             }
+
+
 
             case "setConfig": {
                 const [key, value] = args;
                 if (!(key in config)) break;
                 if (!JsonConfig.typeCheck(config[key], value)) break;
                 config[key] = value;
-                save();
+                save_Config();
                 break;
             }
+
+
+
         }
     });
 

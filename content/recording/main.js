@@ -20,9 +20,10 @@ window.addEventListener("load", () => {
     const save_button = document.getElementById("save_button");
     save_button.addEventListener("click", async () => {
         const now = new Date().toLocaleString().replaceAll("/", "_");
-        const id = await ipc_client.invoke("VOSK_Speech", "save", result_area.innerText, now, ["testTAG"]);
+        const content = result_area.innerText.replaceAll("\n\n", "\n");
+        const id = await ipc_client.invoke("VOSK_Speech", "save", content, now, []);
 
-        if (!id) window.alert("記録をを保存できませんでした");
+        if (!id) window.alert("記録を保存できませんでした");
         const editor = await ipc_client.invoke("VOSK_Speech", "editor", id);
 
         if (editor == -1) {
