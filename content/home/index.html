@@ -1,24 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ホーム</title>
-
-
     <link rel="stylesheet" href="../global.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-
 </head>
 <body>
     <div class="frame">
-        <h1 class="title">文字起こしメモ</h1>
+        <header class="header">
+            <h1 class="title">
+                <i class="fas fa-file-alt"></i>
+                文字起こしメモ
+            </h1>
+        </header>
         <div class="content_frame">
-            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `recording`)">プレイ</div>
-            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `memo_list`)">保存メモ</div>
-            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `settings`)">設定</div>
-            <div class="systemButton" onclick="window.electron.invoke(`VOSK_Speech-Exit`)">ログアウト</div>
+            <div class="menu-grid">
+                <button class="menu-card" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `recording`)">
+                    <i class="fas fa-play"></i>
+                    <span>録音開始</span>
+                </button>
+                <button class="menu-card" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `memo_list`)">
+                    <i class="fas fa-save"></i>
+                    <span>保存メモ</span>
+                </button>
+                <button class="menu-card" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `settings`)">
+                    <i class="fas fa-cog"></i>
+                    <span>設定</span>
+                </button>
+                <button class="menu-card logout" onclick="window.electron.invoke(`VOSK_Speech-Exit`)">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>ログアウト</span>
+                </button>
+            </div>
         </div>
     </div>
 </body>

@@ -1,27 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>録音</title>
-
     <link rel="stylesheet" href="../global.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-
-    
     <script src="main.js"></script>
 </head>
 <body>
     <div class="frame">
-        <div class="controll">
-            <div class="controll_start">スタート※</div>
-            <div class="controll_save" id="save_button">保存アイコン※</div>
-            <button>※ホームアイコン</button>
-        </div>
-        <div class="text_result" id="result_area">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <i class="fas fa-microphone pulse-animation"></i>
+                    音声録音
+                </h1>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="control-panel">
+                <button class="record-button" id="recordButton">
+                    <div class="button-content">
+                        <i class="fas fa-play recording-icon"></i>
+                        <span class="button-text">録音開始</span>
+                    </div>
+                </button>
+                
+                <div class="action-panel">
+                    <button class="action-button ripple" id="save_button">
+                        <i class="fas fa-save"></i>
+                        <span>保存</span>
+                    </button>
+                    <button class="action-button ripple">
+                        <i class="fas fa-home"></i>
+                        <span>ホーム</span>
+                    </button>
+                </div>
+            </div>
 
-        </div>
+            <div class="result-panel">
+                <div class="result-header">
+                    <i class="fas fa-file-alt"></i>
+                    <span>テキスト結果</span>
+                </div>
+                <div class="text-result" id="result_area"></div>
+            </div>
+        </main>
     </div>
 </body>
 </html>
