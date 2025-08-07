@@ -97,9 +97,11 @@ exports.run = async (REP) => {
             window = createWindow();
             window.webContents.openDevTools()
             window.loadFile(homeContentPath);
+            app.bubble = "red";
 
             window.once("closed", () => {
                 window = null;
+                app.bubble = "rgba(0, 0, 0, 0)";
             });
         }
     });

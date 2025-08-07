@@ -2,7 +2,7 @@ window.addEventListener("load", () => {
     const result_area = document.getElementById("result_area");
 
     let resultText = document.createElement("p");
-    resultText.classList.add("partial");
+    resultText.classList.add("text-partial");
     result_area.append(resultText);
 
     ipc_client.on("partialResult", (text) => {
@@ -10,9 +10,9 @@ window.addEventListener("load", () => {
     });
     ipc_client.on("result", (text) => {
         resultText.innerText = text;
-        resultText.classList.remove("partial");
+        resultText.classList.remove("text-partial");
         resultText = document.createElement("p");
-        resultText.classList.add("partial");
+        resultText.classList.add("text-partial");
         result_area.append(resultText);
     });
 

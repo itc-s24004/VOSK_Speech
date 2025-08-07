@@ -137,6 +137,10 @@
     overflow-y: auto;
 }
 
+.text-partial {
+    color: blue;
+}
+
 @keyframes pulse {
     0% {
         transform: scale(1);
