@@ -1,17 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-
-
-
+    <title>保存メモ一覧</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
     <script src="main.js"></script>
 </head>
 <body>
     <div class="frame">
-        <h1>memo_list</h1>
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <i class="fas fa-list-ul"></i>
+                    保存メモ一覧
+                </h1>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="search-panel">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="検索..." id="searchInput">
+                </div>
+            </div>
+
+            <div class="memo-list" id="memoList">
+                <div class="memo-item">
+                    <div class="memo-content">
+                        <input type="text" class="memo-title-input" value="メモタイトル" />
+                        <div class="memo-tags">
+                            <div class="tag-container">
+                                <span class="tag">
+                                    会議
+                                    <button class="tag-delete"><i class="fas fa-times"></i></button>
+                                </span>
+                                <span class="tag">
+                                    メモ
+                                    <button class="tag-delete"><i class="fas fa-times"></i></button>
+                                </span>
+                            </div>
+                            <button class="tag-add">
+                                <i class="fas fa-plus"></i>
+                                タグを追加
+                            </button>
+                        </div>
+                    </div>
+                    <div class="memo-actions">
+                        <button class="edit-button">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="save-button">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="action-button" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `home`)">
+                <i class="fas fa-home"></i>
+                <span>ホームに戻る</span>
+            </button>
+        </main>
     </div>
 </body>
 </html>
