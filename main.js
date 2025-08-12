@@ -216,6 +216,13 @@ exports.run = async (REP) => {
 
 
 
+            case "setMic": {
+                const [status] = args;
+                setMicStatus(status);
+            }
+
+
+
         }
     });
 
@@ -300,8 +307,15 @@ exports.run = async (REP) => {
         if (micInstance) micInstance.stopRecording()
         micInstance = null;
     }
+    function setMicStatus(status) {
+        if (status) {
+            startMic();
+        } else {
+            stopMic();
+        }
+    }
     
-    startMic();
+    // startMic();
 
 
 

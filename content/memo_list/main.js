@@ -1,18 +1,33 @@
 window.addEventListener("load", async () => {
     const memo_list = document.getElementById("memo_list");
 
-    updateList();
+
+
+    /**@type {HTMLInputElement} */
+    const searchInput = document.getElementById("searchInput");
+    /**@type {HTMLFormElement} */
+    const searchForm = document.getElementById("searchForm");
+    searchForm.addEventListener("submit", (ev) => {
+        ev.preventDefault();
+        const search = searchInput.value;
+        updateList(search.length > 0 ? (i) => (i.tags.includes(search) || i.title.includes(search)) : () => true);
+    })
+    updateList(() => true);
 
 
 
-    async function updateList() {
-        /**@type {import("./speechIndex").SpeechIndex} */
+    /**
+     * 
+     * @param {(index: import("./speechIndex").SpeechIndex) => boolean} filter 
+     */
+    async function updateList(filter) {
+        /**@type {import("./speechIndex").SpeechIndex[]} */
         const SpeechIndex = await ipc_client.invoke("VOSK_Speech", "getSpeechIndex");
 
         [...memo_list.children].forEach(m => m.remove());
 
 
-        const SpeechDataFrameList = SpeechIndex.map(({id: _id, title: _title, time: _time, tags: _tags}) => {
+        const SpeechDataFrameList = SpeechIndex.filter(e => filter(e)).map(({id: _id, title: _title, time: _time, tags: _tags}) => {
 
 
             /**フレーム▼ */
