@@ -3,4 +3,4 @@ export type SpeechIndex = {
     "title": string;
     "time": number;
     "tags": string[];
-}[]
+};
