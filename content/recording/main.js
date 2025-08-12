@@ -36,4 +36,19 @@ window.addEventListener("load", () => {
 
         ipc_client.invoke("VOSK_Speech", "open", "home");
     });
+
+
+    const recordButton = document.getElementById("recordButton");
+    recordButton.addEventListener("click", () => switchMicStatus());
+    const recordButton_display = document.getElementById("recordButton_display");
+
+
+    let MicStatus = false;
+    function switchMicStatus() {
+        MicStatus = !MicStatus;
+
+        ipc_client.invoke("VOSK_Speech", "setMic", MicStatus);
+        recordButton_display.innerText = MicStatus ? "録音中" : "録音開始";
+
+    }
 })
