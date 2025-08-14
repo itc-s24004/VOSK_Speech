@@ -93,8 +93,9 @@ window.addEventListener("load", async () => {
             /**タグ追加処理▼ */
             tagB.addEventListener("click", () => {
                 console.log("タグ追加処理");
-                addTag(_tags, tag_container, "tag name");
-                _tags.push("tag name");
+                // addTag(_tags, tag_container, "tag name");
+                // _tags.push("tag name");
+                addTagForm(_tags, tag_container)
             });
 
 
@@ -132,6 +133,8 @@ window.addEventListener("load", async () => {
                     }
                 ]
             });
+
+
             memo_actions.append(memo_save);
             memo_save.addEventListener("click", async () => {
                 ipc_client.invoke("VOSK_Speech", "setSpeechIndex", _id, "title", title.value);
@@ -145,6 +148,43 @@ window.addEventListener("load", async () => {
         memo_list.append(...SpeechDataFrameList);
     }
     
+
+    /**
+     * 
+     * @param {string[]} _tags 
+     * @param {HTMLElement} tag_container 
+     */
+    function addTagForm(_tags, tag_container) {
+        const tagE = jsonHTML.toHTML({
+            tag: "span",
+            class: ["tag"]
+        });
+
+        /**@type {HTMLInputElement} */
+        const input = jsonHTML.toHTML({
+            tag: "input",
+            class: ["tag-input"],
+            attribute: {
+                "type": "text",
+                "placeholder": "新しいタグを入力..."
+            }
+        });
+        tagE.append(input);
+
+        input.addEventListener("blur", () => {
+            console.log("入力終了");
+            const tag = input.value;
+            if (tag.length > 0) {
+                addTag(_tags, tag_container, tag);
+                _tags.push(tag);
+            }
+            tagE.remove();
+        })
+
+        tag_container.append(tagE);
+        input.focus();
+    }
+
 
 
     /**
