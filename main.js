@@ -1,4 +1,4 @@
-const { BrowserWindow, ipcMain, WebContentsView, BaseWindow, shell } = require("electron");
+const { BrowserWindow, ipcMain, shell } = require("electron");
 const mic = require('node-microphone');
 
 
@@ -95,13 +95,14 @@ exports.run = async (REP) => {
 
         } else {
             window = createWindow();
-            window.webContents.openDevTools()
+            // window.webContents.openDevTools()
             window.loadFile(homeContentPath);
             app.bubble = "red";
 
             window.once("closed", () => {
                 window = null;
                 app.bubble = "rgba(0, 0, 0, 0)";
+                stopMic();
             });
         }
     });
@@ -116,6 +117,7 @@ exports.run = async (REP) => {
                 const [content] =  args;
                 const target = path.join(ContentRoot, content, "index.html");
                 window.loadFile(target);
+                stopMic();
                 break
             }
 
@@ -218,7 +220,7 @@ exports.run = async (REP) => {
 
             case "setMic": {
                 const [status] = args;
-                setMicStatus(status);
+                if (status) startMic(); else stopMic();
             }
 
 
@@ -242,30 +244,6 @@ exports.run = async (REP) => {
         editor = ew;
         return ew;
     }
-
-    // const openResult = await shell.openPath(path.join(__dirname, "text.txt"))
-    // console.log(openResult)
-    // console.log("open path")
-    // console.log(path.join(__dirname, "text.txt"))
-
-
-    // const SimpleTextEditorWindow = await REP.getAsync("SimpleTextEditorWindow");
-    // const ew = new SimpleTextEditorWindow();
-    // await ew.whenReady();
-    // ew.title = "テキストエディタ";
-    // const ste = ew.add();
-    // await ste.whenReady();
-    // ste.window.webContents.openDevTools();
-
-
-    // ste.on("save", async () => {
-    //     console.log("save----------------------");
-    //     const txt = await ste.text;
-    //     console.log(txt);
-    // });
-
-    
-
 
 
 
@@ -307,15 +285,7 @@ exports.run = async (REP) => {
         if (micInstance) micInstance.stopRecording()
         micInstance = null;
     }
-    function setMicStatus(status) {
-        if (status) {
-            startMic();
-        } else {
-            stopMic();
-        }
-    }
-    
-    // startMic();
+
 
 
 
