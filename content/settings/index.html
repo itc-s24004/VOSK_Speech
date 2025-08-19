@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設定</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="style.css">
+
+
+    <script src="../__module/input/input.js"></script>
+    <script src="main.js"></script>
+</head>
+<body>
+    <div class="settings-container">
+        <div class="settings-title">設定</div><div class="settings-section">
+            <label class="settings-label" for="default-title">デフォルトタイトル</label>
+            <select id="default-title" class="settings-select">
+                <option value="date">日付</option>
+                <option value="time">日時</option>
+                <option value="first15">冒頭15文字</option>
+                <option value="last15">末尾15文字</option>
+            </select>
+        </div>
+        <div class="settings-section checkbox-section">
+            <label class="settings-checkbox-label">
+                <input type="checkbox" id="trim-space" class="settings-checkbox">
+                スペースを詰めて保存する
+            </label>
+        </div>
+        <div class="settings-section">
+            <label class="settings-label" for="default-tag">デフォルトのタグ</label>
+            <input type="text" id="default_tag" class="settings-input" placeholder="例: 仕事, プライベート">
+        </div>
+        <div class="settings-section">
+            <label class="settings-label" for="model-select">モデルの選択</label>
+            <select id="model-select" class="settings-select">
+                <!-- 選択項目生成 -->
+                <!-- <option value="vosk-small">VOSK Small</option> -->
+            </select>
+            <button type="button" class="settings-btn model" onclick="window.electron.invoke(`VOSK_Wrapper`, `openModelDir`)">モデルフォルダを開く</button>
+        </div>
+        <div class="settings-actions">
+            <button type="button" class="settings-btn home" onclick="window.electron.invoke(`VOSK_Speech`, `open`, `home`)">戻る</button>
+            <button type="button" class="settings-btn save" id="save-settings" disabled>保存</button>
+        </div>
+    </div>
+</body>
+</html>
