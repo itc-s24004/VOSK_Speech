@@ -18,10 +18,10 @@ window.addEventListener("load", async () => {
 
     /**
      * 
-     * @param {(index: import("./speechIndex").SpeechIndex) => boolean} filter 
+     * @param {(index: import("../../speechIndex").SpeechIndex) => boolean} filter 
      */
     async function updateList(filter) {
-        /**@type {import("./speechIndex").SpeechIndex[]} */
+        /**@type {import("../../speechIndex").SpeechIndex[]} */
         const SpeechIndex = await ipc_client.invoke("VOSK_Speech", "getSpeechIndex");
 
         [...memo_list.children].forEach(m => m.remove());
@@ -29,12 +29,18 @@ window.addEventListener("load", async () => {
 
         const SpeechDataFrameList = SpeechIndex.filter(e => filter(e)).map(({id: _id, title: _title, time: _time, tags: _tags}) => {
 
+            const modifyCall = () => {
+                memo_save.disabled = false;
+            }
 
             /**フレーム▼ */
             const root = jsonHTML.toHTML({
                 tag: "div",
                 class: ["memo-item"],
                 attribute: {"id": `${_id}-root`}
+            });
+            root.addEventListener("dblclick", (ev) => {
+                if (ev.target == root) ipc_client.invoke("VOSK_Speech", "open", "view", _id);
             });
 
             
@@ -72,7 +78,7 @@ window.addEventListener("load", async () => {
 
 
             /**タグ一覧生成▼ */
-            _tags.forEach(tag => addTag(_tags, tag_container, tag));
+            _tags.forEach(tag => addTag(_tags, tag_container, tag, modifyCall));
 
 
             /**タグ追加ボタン▼ */
@@ -95,7 +101,7 @@ window.addEventListener("load", async () => {
                 console.log("タグ追加処理");
                 // addTag(_tags, tag_container, "tag name");
                 // _tags.push("tag name");
-                addTagForm(_tags, tag_container)
+                addTagForm(_tags, tag_container, modifyCall, modifyCall)
             });
 
 
@@ -107,22 +113,9 @@ window.addEventListener("load", async () => {
             root.append(memo_actions);
 
 
-            /**コンテンツ編集ボタン▼ */
-            const memo_edit = jsonHTML.toHTML({
-                tag: "button",
-                class: ["edit-button"],
-                child: [
-                    {
-                        tag: "i",
-                        class: ["fas", "fa-edit"]
-                    }
-                ]
-            });
-            memo_actions.append(memo_edit);
-            memo_edit.addEventListener("click", () => ipc_client.invoke("VOSK_Speech", "editor", _id));
 
 
-            /**保存ボタン▼ */
+            /**保存ボタン▼ @type {HTMLButtonElement}*/
             const memo_save = jsonHTML.toHTML({
                 tag: "button",
                 class: ["edit-button"],//!!!デザイン修正後にここも修正
@@ -131,14 +124,20 @@ window.addEventListener("load", async () => {
                         tag: "i",
                         class: ["fas", "fa-check"]
                     }
-                ]
+                ],
+                attribute: {
+                    "disabled": null
+                }
             });
 
 
             memo_actions.append(memo_save);
             memo_save.addEventListener("click", async () => {
-                ipc_client.invoke("VOSK_Speech", "setSpeechIndex", _id, "title", title.value);
-                await ipc_client.invoke("VOSK_Speech", "setSpeechIndex", _id, "tags", _tags);
+                if (window.confirm("変更を保存しますか?\n※上書きするともとに戻すことはできません")) {
+                    ipc_client.invoke("VOSK_Speech", "setSpeechIndex", _id, "title", title.value);
+                    ipc_client.invoke("VOSK_Speech", "setSpeechIndex", _id, "tags", _tags);
+                    memo_save.disabled = true;
+                }
             });
 
             return root;
@@ -148,76 +147,4 @@ window.addEventListener("load", async () => {
         memo_list.append(...SpeechDataFrameList);
     }
     
-
-    /**
-     * 
-     * @param {string[]} _tags 
-     * @param {HTMLElement} tag_container 
-     */
-    function addTagForm(_tags, tag_container) {
-        const tagE = jsonHTML.toHTML({
-            tag: "span",
-            class: ["tag"]
-        });
-
-        /**@type {HTMLInputElement} */
-        const input = jsonHTML.toHTML({
-            tag: "input",
-            class: ["tag-input"],
-            attribute: {
-                "type": "text",
-                "placeholder": "新しいタグを入力..."
-            }
-        });
-        tagE.append(input);
-
-        input.addEventListener("blur", () => {
-            console.log("入力終了");
-            const tag = input.value;
-            if (tag.length > 0) {
-                addTag(_tags, tag_container, tag);
-                _tags.push(tag);
-            }
-            tagE.remove();
-        })
-
-        tag_container.append(tagE);
-        input.focus();
-    }
-
-
-
-    /**
-     * 
-     * @param {string[]} _tags 
-     * @param {HTMLElement} tag_container 
-     * @param {string} tag 
-     */
-    function addTag(_tags, tag_container, tag) {
-        const tagE = jsonHTML.toHTML({
-            tag: "span",
-            class: ["tag"]
-        });
-        tagE.innerText = tag;
-
-        const deleteB = jsonHTML.toHTML({
-            tag: "button",
-            class: ["tag-delete"],
-            child: [
-                {
-                    tag: "i",
-                    class: ["fas", "fa-times"]
-                }
-            ]
-        });
-        tagE.append(deleteB);
-
-        //タグ削除機能▼
-        deleteB.addEventListener("click", () => {
-            tagE.remove();
-            _tags.splice(_tags.indexOf(tag), 1);
-        });
-
-        tag_container.append(tagE);
-    }
 });
