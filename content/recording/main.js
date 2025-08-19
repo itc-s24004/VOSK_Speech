@@ -1,40 +1,52 @@
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
+    /**@type {import("../../config").defaultConfigType} */
+    const config = await ipc_client.invoke("VOSK_Speech", "getConfig");
+    const log = [];
+
     const result_area = document.getElementById("result_area");
 
     let resultText = document.createElement("p");
     resultText.classList.add("text-partial");
-    result_area.append(resultText);
+    result_area.prepend(resultText);
 
     ipc_client.on("partialResult", (text) => {
         resultText.innerText = text;
     });
-    ipc_client.on("result", (text) => {
+    ipc_client.on("result", (/**@type {String}*/text) => {
         resultText.innerText = text;
+        if (!text) return;
+        log.push(config.removeSpace ? text.replaceAll(" ", "") : text);
         resultText.classList.remove("text-partial");
         resultText = document.createElement("p");
         resultText.classList.add("text-partial");
-        result_area.append(resultText);
+        result_area.prepend(resultText);
     });
 
 
     const save_button = document.getElementById("save_button");
     save_button.addEventListener("click", async () => {
-        const now = new Date().toLocaleString().replaceAll("/", "_");
-        const content = result_area.innerText.replaceAll("\n\n", "\n");
-        const id = await ipc_client.invoke("VOSK_Speech", "save", content, now, []);
+        const contentR = log.join("");
+        const content = log.join("\n");
+        const now = new Date();
+        const Y = now.getFullYear();
+        const M = now.getMonth();
+        const D = now.getDate();
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const title = (() => {
+            switch (config.defaultTitle) {
+                case "date": return `${Y}_${M}_${D}`;
+                case "time": return `${Y}_${M}_${D}:${h}:${m}`;
+                case "first15": return contentR.length < 15 ? contentR : contentR.slice(0, 15);
+                case "last15": return contentR.length < 15 ? contentR : contentR.slice(-15);
+            }
+        })()
 
-        if (!id) window.alert("記録を保存できませんでした");
-        const editor = await ipc_client.invoke("VOSK_Speech", "editor", id);
+        const id = await ipc_client.invoke("VOSK_Speech", "save", content, title, []);
 
-        if (editor == -1) {
-            window.alert("エディタを起動できませんでした");
+        if (!id) return window.alert("記録を保存できませんでした");
 
-        } else if (editor == 0) {
-            window.alert("記録を取得できませんでした");
-
-        }
-
-        ipc_client.invoke("VOSK_Speech", "open", "home");
+        ipc_client.invoke("VOSK_Speech", "open", "view", id);
     });
 
 
