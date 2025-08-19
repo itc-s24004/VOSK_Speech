@@ -22,13 +22,18 @@ exports.run = async (REP) => {
 
 
     //設定▼
+    /**@type {import("./config").defaultConfigType} */
+    const defaultConfig = {
+        "defaultTitle": "date",
+        "removeSpace": false,
+        "defaultTag": [],
+        "model": ""
+    }
     const configPath = path.join(APP_ROOT, "config.json");
     const JsonConfig = REP.get("JsonConfig");
     const [config, useDefaultConfig, save_Config] = JsonConfig.load(
         configPath,
-        {
-            "model": ""
-        }
+        defaultConfig
     );
     if (useDefaultConfig) save_Config();
 
@@ -94,14 +99,14 @@ exports.run = async (REP) => {
             window.focus();
 
         } else {
-            window = createWindow();
+            window = createWindow({width: 900, minWidth : 900, minHeight: 600});
             // window.webContents.openDevTools()
             window.loadFile(homeContentPath);
             app.bubble = "red";
 
             window.once("closed", () => {
                 window = null;
-                app.bubble = "rgba(0, 0, 0, 0)";
+                app.bubble = "transparent";
                 stopMic();
             });
         }
@@ -114,9 +119,10 @@ exports.run = async (REP) => {
 
         switch (EventName) {
             case "open": {
-                const [content] =  args;
+                const [content, ...options] =  args;
                 const target = path.join(ContentRoot, content, "index.html");
                 window.loadFile(target);
+                window.webContents.once("did-finish-load", () => window.webContents.send("option", ...options));
                 stopMic();
                 break
             }
@@ -162,41 +168,21 @@ exports.run = async (REP) => {
 
 
 
-            case "editor": {
+            case "getContent": {
                 const [id] = args;
-                //エディタウィンドウを準備
-                const ew = await createEditor();
-                if (!ew) return -1;
-
-
-                const data = speechIndex.find(i => i.id == id);
-                if (!data) return 0;
-
-                //記録を取得
                 const contentPath = path.join(LOG_ROOT, id);
-                const content = (() => {
-                    try {
-                        return fs.readFileSync(contentPath, {encoding: "utf-8"});
-                    } catch {
-                        return "";
-                    }
-                })();
-                if (typeof content != "string") return 0;
+                try {
+                    return fs.readFileSync(contentPath, {encoding: "utf-8"});
+                } catch {
+                    return "";
+                }
+            }
 
-                //エディタ準備
-                const te = ew.add();
-                if (!te) return -1;
 
-                await te.whenReady();
-                te.insert(content);
-                
 
-                te.on("save", async () => {
-                    const content = await te.text;
-                    fs.writeFileSync(contentPath, content);
-                });
-
-                return true;
+            case "updateContent": {
+                const [id, content] = args;
+                fs.writeFileSync(path.join(LOG_ROOT, id), content);
             }
 
 
@@ -229,22 +215,6 @@ exports.run = async (REP) => {
     });
 
 
-    /**@type {import("../../system/ModuleRepository/_rep_plugin").rep_plugin["SimpleTextEditorWindow"]["prototype"]} */
-    let editor;
-    async function createEditor() {
-        if (editor) return editor;
-        if (!REP.has("SimpleTextEditorWindow")) return;
-        const SimpleTextEditorWindow = await REP.getAsync("SimpleTextEditorWindow");
-        const ew = new SimpleTextEditorWindow();
-        ew.on("close", () => {
-            editor = null;
-        });
-        await ew.whenReady();
-        ew.title = "記録を編集";
-        editor = ew;
-        return ew;
-    }
-
 
 
     const sample_rate = 48000;
@@ -252,7 +222,11 @@ exports.run = async (REP) => {
 
     const VOSK_Models = VOSK_Wrapper.models;
 
-    const vosk = new VOSK_Wrapper(sample_rate, VOSK_Models[0]);
+    const configModel = config.model;
+
+    const useModel = VOSK_Models.includes(configModel) ? configModel : VOSK_Models[0]
+
+    const vosk = new VOSK_Wrapper(sample_rate, useModel);
 
 
     vosk.on("result", (result) => {
@@ -283,13 +257,14 @@ exports.run = async (REP) => {
     }
     function stopMic() {
         if (micInstance) micInstance.stopRecording()
+        vosk.inputAudio(Buffer.from([0]));
         micInstance = null;
     }
 
 
 
 
-    //終了時にマイクを停止
+    //終了時にマイクとVOSKを停止
     addExitCall(() => {
         // console.log("kill")
         vosk.stop();
